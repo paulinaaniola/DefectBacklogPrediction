@@ -5,6 +5,8 @@ weeks_to_predict = read.csv(file=paste("data/", product[1], "/", product[2], "/"
     
 weekly_backlog_ts = ts(defect_backlog$backlog_all)
 components <- c()
+last_week_number = tail(defect_backlog$number, n=1)
+    
 for(j in 1:number_of_weeks_to_predict){
     assign(paste('forecast', j, sep='_'), c())
     assign(paste('actual', j, sep='_'), c())
@@ -37,14 +39,22 @@ for(i in 1:nrow(weeks_to_predict)){
             forecasted_value = round(fc$mean[j])
             forecasts_j = get(paste("forecast", j, sep = "_"))
             assign(paste('forecast', j, sep='_'), c(forecasts_j, forecasted_value))
+            
+            if(week_number + j -1 <= last_week_number){
+                actual_backlog_size = (defect_backlog %>% filter (number == (week_number + j -1)) %>% select (backlog_all))[[1]]
+                actuals_j = get(paste("actual", j, sep = "_"))
+                assign(paste('actual', j, sep='_'), c(actuals_j, actual_backlog_size))
 
-            actual_backlog_size = (defect_backlog %>% filter (number == (week_number + j -1)) %>% select (backlog_all))[[1]]
-            actuals_j = get(paste("actual", j, sep = "_"))
-            assign(paste('actual', j, sep='_'), c(actuals_j, actual_backlog_size))
+                ae = abs(forecasted_value - actual_backlog_size)
+                errors_j = get(paste("error", j, sep = "_"))
+                assign(paste('error', j, sep='_'), c(errors_j, ae ))
+            } else {
+                actuals_j = get(paste("actual", j, sep = "_"))
+                assign(paste('actual', j, sep='_'), c(actuals_j, NA))
 
-            ae = abs(forecasted_value - actual_backlog_size)
-            errors_j = get(paste("error", j, sep = "_"))
-            assign(paste('error', j, sep='_'), c(errors_j, ae ))
+                ae = abs(forecasted_value - actual_backlog_size)
+                assign(paste('error', j, sep='_'), c(errors_j, NA ))           
+            } 
         }
     }
 }
