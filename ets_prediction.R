@@ -29,8 +29,10 @@ for(i in 1:nrow(weeks_to_predict)){
             assign(paste('error', j, sep='_'), c(errors_j, NA ))
         }
     } else {
+        # if training_history = 0 then all past data are used as a training history
+        training_start_week = ifelse(training_history == 0, 0, week_number - training_history)
         fit = ets(subset(weekly_backlog_ts, 
-                         start = week_number-training_history,
+                         start = training_start_week,
                          end = week_number))
         fc = forecast(fit, number_of_weeks_to_predict )  
         comp = fit$components
@@ -80,7 +82,8 @@ for(j in 1:number_of_weeks_to_predict){
     result <- merge(result, results_j, all = TRUE)
 } 
 colnames(result)[1] <- "Week"    
-    
-result_file_path = paste("data/", product[1], "/", product[2], "/Predictions/", "ets_th:", training_history, ".csv", sep="")
+
+th <- ifelse(training_history == 0, "all", training_history)
+result_file_path = paste("data/", product[1], "/", product[2], "/Predictions/", "ets_th:", th, ".csv", sep="")
 write.table(result, file = result_file_path, sep=",")
 }
