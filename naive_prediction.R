@@ -11,7 +11,6 @@ errors <- c()
 
 for(i in 1:nrow(weeks_to_predict)){
     week_number <- weeks_to_predict[i,1]
-    print(week_number)
     actual_backlog_size = defect_backlog %>% filter (number == week_number) %>% select (backlog_all)
     actuals = c(actuals, actual_backlog_size[[1]])
     if (week_number == defect_backlog$number[1]){
@@ -26,7 +25,7 @@ for(i in 1:nrow(weeks_to_predict)){
                          start = week_number-2,
                          end = week_number))
         fc = forecast(model,1)
-        forecasts[i] = round(fc$mean)
+        forecasts[i] = round(fc$mean[1])
         ae <- as.integer(forecasts[i]) - as.integer(actuals[i])
         errors[i] = abs(ae)
     }
