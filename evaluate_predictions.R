@@ -37,14 +37,46 @@ evaluate <- function (product) {
         }
     }
     
-    evaluation <- data.frame(Method = methods)
+    errors <- data.frame(Method = methods)
         
     for(j in 1:number_of_predicted_weeks){
         mean_ae_j = get(paste("mean_ae", j, sep = "_"))
-        results_j = data.frame(Method = methods)
+        errors_j = data.frame(Method = methods)
+        errors_j[, paste("Error", j, sep="_")] = mean_ae_j
+        errors <- merge(errors, errors_j, all = TRUE)
+    }  
+    
+    naive_ae = (errors %>% filter (Method == 'naive') %>% select (Error_1))[[1]]
+    
+    for(i in 1:nrow(errors)) {
+        method_name = errors[i, 1]
+        for(j in 1:number_of_predicted_weeks){         
+            improvement_j = get(paste("improvement", j, sep = "_"))
 
-        results_j[, paste("Error", j, sep="_")] = mean_ae_j
-
-        evaluation <- merge(evaluation, results_j, all = TRUE)
-    }    
+            if(j>1 && (method_name == "naive" | method_name == "ericsson")){
+               assign(paste('improvement', j, sep='_'), c(improvement_j, NA))
+            } else {
+                error_column_name = paste("Error", j, sep="_")
+                method_mean_error = errors[i, error_column_name]
+                impr_j = (1 - as.integer(method_mean_error)/as.integer(naive_ae))*100
+                # remove after decision what to do with naive forecasting 2,3,4 weeks forward
+                impr_j = ifelse(j>1, NA, impr_j)
+                assign(paste('improvement', j, sep='_'), c(improvement_j, impr_j))
+            }
+         }
+     }
+        
+     result <- data.frame(Method = methods)
+   
+     for(j in 1:number_of_predicted_weeks){
+        mean_ae_j = get(paste("mean_ae", j, sep = "_"))
+        improvement_j = get(paste("improvement", j, sep = "_"))
+        result_j = data.frame(Method = methods)
+        result_j[, paste("Error", j, sep="_")] = mean_ae_j
+        result_j[, paste("Improvement", j, sep="_")] = improvement_j
+        result <- merge(result, result_j, all = TRUE)
+     }  
+        
+    result_file_path = paste("data/", product[1], "/", product[2], "/predictions_evaluation.csv", sep="")
+    write.table(result, file = result_file_path, sep=",")
 }                        
