@@ -31,10 +31,10 @@ for(i in 1:nrow(weeks_to_predict)){
     }
 }
 
-result <- data.frame(Week=weeks_to_predict$V1, 
-                     Actual=actuals, 
-                     Forecast=forecasts,
-                     Absolute_Error = errors)
+result <- data.frame(Week = weeks_to_predict$V1, 
+                     Actual_1 = actuals, 
+                     Forecast_1 = forecasts,
+                     Error_1 = errors)
     
 result_file_path = paste("data/", product[1], "/", product[2], "/Predictions/", "naive.csv", sep="")
 write.table(result, file = result_file_path, sep=",")

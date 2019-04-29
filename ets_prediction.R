@@ -15,7 +15,7 @@ for(j in 1:number_of_weeks_to_predict){
 
 for(i in 1:nrow(weeks_to_predict)){
     week_number <- weeks_to_predict[i,1]
-    if ((week_number-training_history)<0){
+    if ((week_number-training_history)<0 | (training_history == 0 & week_number == 0)){
         components[i] = NA
         for(j in 1:number_of_weeks_to_predict){
             forecasts_j = get(paste("forecast", j, sep = "_"))
@@ -69,16 +69,11 @@ for(j in 1:number_of_weeks_to_predict){
     actuals_j = get(paste("actual", j, sep = "_"))
     errors_j = get(paste("error", j, sep = "_"))
     results_j = data.frame(Week = weeks_to_predict)
-
-    if(j == 1){
-        results_j[, "Actual"] = actuals_j
-        results_j[, "Forecast"] = forecasts_j
-        results_j[, "Error"] = errors_j
-    } else {
-        results_j[, paste("Actual", j-1, sep="+")] = actuals_j
-        results_j[, paste("Forecast", j-1, sep="+")] = forecasts_j
-        results_j[, paste("Error", j-1, sep="+")] = errors_j
-    }
+    
+    results_j[, paste("Actual", j, sep="_")] = actuals_j
+    results_j[, paste("Forecast", j, sep="_")] = forecasts_j
+    results_j[, paste("Error", j, sep="_")] = errors_j
+    
     result <- merge(result, results_j, all = TRUE)
 } 
 colnames(result)[1] <- "Week"    
