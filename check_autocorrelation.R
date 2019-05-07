@@ -8,7 +8,7 @@ evaluate_autocorrelation <- function (products) {
        product_names = c(product_names, paste(product[1], product[2], sep = "_"))
     }
     result = data.frame(Products = product_names,
-                        Percent_of_correlated_lags = autocorrelation_measures)
+                        Percent_of_autocorrelation_that_exceeds_sign_bounds = autocorrelation_measures)
     write.table(result, file = "data/autocorrelation_evaluation.csv", sep=",")
 }    
 
@@ -25,7 +25,6 @@ check_backlog_autocorrelation <- function(product){
     most_frequent_p_d_q <- tail(names(sort(table(best_arima_predictions$p_d_g))), 1)
     d <- strsplit(most_frequent_p_d_q, " ", fixed=TRUE)[[1]][[2]]
     d <- strtoi(d)
-    print(d)
     
     backlog_all <- defect_backlog$backlog_all
     number_of_diff = d

@@ -22,6 +22,7 @@ evaluate_single_product_predictions <- function (product) {
     for(j in 1:number_of_predicted_weeks){
         assign(paste('mean_ae', j, sep='_'), c())
         assign(paste('improvement', j, sep='_'), c())
+        assign(paste('errors_autocorrelation', j, sep='_'), c())
     }
 
     for(i in 1:length(files)) {
@@ -33,14 +34,25 @@ evaluate_single_product_predictions <- function (product) {
         
          for(j in 1:number_of_predicted_weeks){
             mean_ae_j = get(paste("mean_ae", j, sep = "_"))
+            errors_autocorrelation_j = get(paste("errors_autocorrelation", j, sep = "_"))
 
             if(j>1 && (method_name == "naive" | method_name == "ericsson")){
                assign(paste('mean_ae', j, sep='_'), c(mean_ae_j, NA))
+               assign(paste('errors_autocorrelation', j, sep='_'), c(errors_autocorrelation_j, NA))
             } else {
                 error_column_name = paste("Error", j, sep="_")
+                error_autocorrelation_column_name = paste("Error_Autocorrelation", j, sep="_")
                 ae_j = mean(predictions[, error_column_name], na.rm=TRUE) 
+                
+                errors = predictions[, error_column_name]
+                errors <- errors[!is.na(errors)]
+                ljung_box_test = Box.test(predictions[, error_column_name], lag=(length(errors)-2), type="Ljung-Box")
+                
                 ae_j = round(ae_j, 2)
+                acorr_j = ljung_box_test$p.value>0.05
+                
                 assign(paste('mean_ae', j, sep='_'), c(mean_ae_j, ae_j))
+                assign(paste('errors_autocorrelation', j, sep='_'), c(errors_autocorrelation_j, acorr_j))
             }
         }
     }
@@ -78,10 +90,12 @@ evaluate_single_product_predictions <- function (product) {
    
      for(j in 1:number_of_predicted_weeks){
         mean_ae_j = get(paste("mean_ae", j, sep = "_"))
+        acorr_j = get(paste('errors_autocorrelation', j, sep = "_"))
         improvement_j = get(paste("improvement", j, sep = "_"))
         result_j = data.frame(Method = methods)
         result_j[, paste("Error", j, sep="_")] = mean_ae_j
         result_j[, paste("Impr", j, sep="_")] = improvement_j
+        result_j[, paste("Independent_errors", j, sep="_")] = acorr_j
         result <- merge(result, result_j, all = TRUE)
      }  
         
@@ -95,10 +109,15 @@ calculate_mean_assesment_measures <- function(products){
     first_component_evaluation = read.csv(file=first_product_path, header=TRUE, sep=",") 
     methods = first_component_evaluation$Method
     methods = mixedsort(methods)
+    
     improvements_result = matrix(NA, 0, length(methods))
-    errors_result = matrix(NA, 0, length(methods))
     colnames(improvements_result) <- methods
+
+    errors_result = matrix(NA, 0, length(methods))
     colnames(errors_result) <- methods
+    
+    indep_errors_result = matrix(NA, 0, length(methods))
+    colnames(indep_errors_result) <- methods
     
     for(i in 1:nrow(products)){
         product = products[i,]
@@ -106,18 +125,25 @@ calculate_mean_assesment_measures <- function(products){
         component_evaluation = read.csv(file=product_path, header=TRUE, sep=",")
         improvements = c()
         errors = c()
+        indep_errors = c()
         for(j in 1:length(methods)){
             method_improvement = (component_evaluation %>% filter (Method == methods[j]) %>% select (Impr_1))[[1]]
             improvements = c(improvements, method_improvement)
             
             method_error = (component_evaluation %>% filter (Method == methods[j]) %>% select (Error_1))[[1]]
             errors = c(errors, method_error)
+            
+            method_indep_errors = (component_evaluation %>% filter (Method == methods[j]) %>% select (Independent_errors_1))[[1]]
+            indep_errors = c(indep_errors, method_indep_errors)
         }
         improvements_result = rbind(improvements_result, improvements)
         rownames(improvements_result)[i] = paste(product[1], product[2], sep="_")
 
         errors_result = rbind(errors_result, errors)
         rownames(errors_result)[i] = paste(product[1], product[2], sep="_")
+        
+        indep_errors_result = rbind(indep_errors_result, indep_errors)
+        rownames(indep_errors_result)[i] = paste(product[1], product[2], sep="_")
     }
 
     mean_improvement <- c()
@@ -125,6 +151,9 @@ calculate_mean_assesment_measures <- function(products){
     
     mean_error <- c()
     errors_standard_deviation <- c()
+    
+    number_of_independent_errors <- c()
+    number_of_dependent_errors <- c()
    
     for(i in 1:ncol(improvements_result)){
         method_improvements = improvements_result[,i]
@@ -133,15 +162,29 @@ calculate_mean_assesment_measures <- function(products){
         
         method_errors = errors_result[,i]
         mean_error = c(mean_error, mean(method_errors))
-        errors_standard_deviation = c(errors_standard_deviation, sqrt(var(method_errors)))                
+        errors_standard_deviation = c(errors_standard_deviation, sqrt(var(method_errors)))   
+        
+        method_indep_errors = indep_errors_result[,i]
+        error_indep <- table(method_indep_errors)
+        number_of_false = error_indep[names(error_indep)==FALSE]
+        number_of_true = error_indep[names(error_indep)==TRUE]        
+        number_of_false = ifelse(is.na(number_of_false[1]), 0, number_of_false[1])
+        number_of_true = ifelse(is.na(number_of_true[1]), 0, number_of_true[1])
+        
+        number_of_independent_errors = c(number_of_independent_errors, number_of_true)
+        number_of_dependent_errors = c(number_of_dependent_errors, number_of_false)
+
     }
     improvements_result = rbind(improvements_result, mean_improvement)
     improvements_result = rbind(improvements_result, improvements_standard_deviation)
     
     errors_result = rbind(errors_result, mean_error)
     errors_result = rbind(errors_result, errors_standard_deviation)
+    
+    indep_errors_result = rbind(indep_errors_result, number_of_independent_errors)
+    indep_errors_result = rbind(indep_errors_result, number_of_dependent_errors)
 
     write.table(improvements_result, file = "data/improvements_evaluation_week_1.csv", sep=",")  
-    write.table(errors_result, file = "data/errors_evaluation_week_1.csv", sep=",")      
-
+    write.table(errors_result, file = "data/errors_evaluation_week_1.csv", sep=",") 
+    write.table(indep_errors_result, file = "data/errors_independance_evaluation_week_1.csv", sep=",") 
 }
