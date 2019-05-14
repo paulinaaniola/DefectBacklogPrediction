@@ -78,7 +78,7 @@ evaluate_single_product_predictions <- function (product) {
             } else {
                 error_column_name = paste("Error", j, sep="_")
                 method_mean_error = errors[i, error_column_name]
-                impr_j = (1 - as.integer(method_mean_error)/as.integer(naive_ae))*100
+                impr_j = (1 - (method_mean_error/naive_ae))*100
                 # remove after decision what to do with naive forecasting 2,3,4 weeks forward
                 impr_j = ifelse(j>1, NA, round(impr_j, 2))
                 assign(paste('improvement', j, sep='_'), c(improvement_j, impr_j))
@@ -157,12 +157,12 @@ calculate_mean_assesment_measures <- function(products){
    
     for(i in 1:ncol(improvements_result)){
         method_improvements = improvements_result[,i]
-        mean_improvement = c(mean_improvement, mean(method_improvements))
-        improvements_standard_deviation = c(improvements_standard_deviation, sqrt(var(method_improvements)))
+        mean_improvement = c(mean_improvement, round(mean(method_improvements), 2))
+        improvements_standard_deviation = c(improvements_standard_deviation, round(sqrt(var(method_improvements)), 2))
         
         method_errors = errors_result[,i]
-        mean_error = c(mean_error, mean(method_errors))
-        errors_standard_deviation = c(errors_standard_deviation, sqrt(var(method_errors)))   
+        mean_error = c(mean_error, round(mean(method_errors), 2))
+        errors_standard_deviation = c(errors_standard_deviation, round(sqrt(var(method_errors)), 2))   
         
         method_indep_errors = indep_errors_result[,i]
         error_indep <- table(method_indep_errors)
