@@ -21,88 +21,57 @@ evaluate_single_product_predictions <- function (product) {
 
     
     methods <- c()
-    arima_naive_diff_1 <- c()
-    ets_naive_diff_1 <- c()
-    improvement_1 <- c()
-    cliff_delta_1 <- c()
-    hedges_g_1 <- c()
-    
-    for(j in 1:number_of_predicted_weeks){
-        assign(paste('mean_ae', j, sep='_'), c())
-        assign(paste('errors_autocorrelation', j, sep='_'), c())
-    }
-    
+    improvement <- c()
+    cliff_delta <- c()
+    hedges_g <- c()
+    mean_ae <- c()
+    errors_autocorrelation <- c()
 
     for(i in 1:length(files)) {
         x = files[i]
         end_of_file_name = strsplit(x, "/Predictions/", fixed=TRUE)
         method_name = (strsplit(end_of_file_name[[1]][2], ".", fixed=TRUE))[[1]][1]
         predictions = read.csv(file=x, header=TRUE, sep=",") 
-        methods = c(methods, method_name)      
-        
-         for(j in 1:number_of_predicted_weeks){          
-            mean_ae_j = get(paste("mean_ae", j, sep = "_"))
-            errors_autocorrelation_j = get(paste("errors_autocorrelation", j, sep = "_"))
+        methods = c(methods, method_name)                     
+     
+        errors = predictions[, "Error_1"]
+        errors <- errors[!is.na(errors)]                            
+        ae = mean(errors, na.rm=TRUE)              
+        ljung_box_test = Box.test(errors, lag=30, type="Ljung-Box")             
+        ae = round(ae, 2)
+        acorr = ljung_box_test$p.value>0.05
 
-            if(j>1 && (method_name == "naive" | method_name == "ericsson")){
-               assign(paste('mean_ae', j, sep='_'), c(mean_ae_j, NA))
-               assign(paste('errors_autocorrelation', j, sep='_'), c(errors_autocorrelation_j, NA))
-               
-            } else {
-                error_column_name = paste("Error", j, sep="_")               
-                errors = predictions[, error_column_name]
-                errors <- errors[!is.na(errors)]                            
-                ae_j = mean(errors, na.rm=TRUE)              
-                ljung_box_test = Box.test(predictions[, error_column_name], lag=30, type="Ljung-Box")             
-                ae_j = round(ae_j, 2)
-                acorr_j = ljung_box_test$p.value>0.05
-                
-                assign(paste('mean_ae', j, sep='_'), c(mean_ae_j, ae_j))
-                assign(paste('errors_autocorrelation', j, sep='_'), c(errors_autocorrelation_j, acorr_j))
-            }
-        }
+        mean_ae = c(mean_ae, ae)
+        errors_autocorrelation = c(errors_autocorrelation, acorr)      
         
         # cliff's delta and hedges'g coefficients for all methods and naive method
         method_error_1 = predictions[, "Error_1"]
         method_cd = toString(cliff.delta(naive_error_1, method_error_1)$magnitude)
         method_hg = toString(cohen.d(naive_error_1, method_error_1, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
-        cliff_delta_1 = c(cliff_delta_1, method_cd)
-        hedges_g_1 = c(hedges_g_1, method_hg)
+        cliff_delta = c(cliff_delta, method_cd)
+        hedges_g = c(hedges_g, method_hg)
     }
     
     errors <- data.frame(Method = methods)
-        
-    for(j in 1:number_of_predicted_weeks){
-        mean_ae_j = get(paste("mean_ae", j, sep = "_"))
-        errors_j = data.frame(Method = methods)
-        errors_j[, paste("Error", j, sep="_")] = mean_ae_j
-        errors <- merge(errors, errors_j, all = TRUE)
-    }  
+    errors[, "Error_1"] = mean_ae     
     
     ## predictions improvement compared to naive method
     for(i in 1:length(files)){
         naive_ae = (errors %>% filter (Method == 'naive') %>% select (Error_1))[[1]]
         method_mean_error = errors[i, "Error_1"]
-        impr_j = (1 - (method_mean_error/naive_ae))*100
-        impr_j = round(impr_j, 2)              
-        improvement_1 = c(improvement_1, impr_j)           
+        impr = (1 - (method_mean_error/naive_ae))*100
+        impr = round(impr, 2)              
+        improvement = c(improvement, impr)           
     }
         
     ## single product predictions evaluation
-     result <- data.frame(Method = methods)   
-     for(j in 1:number_of_predicted_weeks){
-        mean_ae_j = get(paste("mean_ae", j, sep = "_"))
-        acorr_j = get(paste('errors_autocorrelation', j, sep = "_"))
-        result_j = data.frame(Method = methods)
-        result_j[, paste("Error", j, sep="_")] = mean_ae_j
-        if(j==1){
-            result_j[, "Impr_1"] = improvement_1
-            result_j[, "Cliff_delta"] = cliff_delta_1
-            result_j[, "Hedges_g"] = hedges_g_1
-        }
-        result_j[, paste("Independent_errors", j, sep="_")] = acorr_j
-        result <- merge(result, result_j, all = TRUE)
-     }  
+    result <- data.frame(Method = methods)   
+    result = data.frame(Method = methods)
+    result[, "Error_1"] = mean_ae
+    result[, "Impr_1"] = improvement
+    result[, "Cliff_delta"] = cliff_delta
+    result[, "Hedges_g"] = hedges_g
+    result[, "Independent_errors"] = acorr      
         
     result_file_path = paste("data/", product[1], "/", product[2], "/predictions_evaluation.csv", sep="")
     write.table(result, file = result_file_path, sep=",")
@@ -139,7 +108,7 @@ calculate_mean_assesment_measures <- function(products){
             method_error = (component_evaluation %>% filter (Method == methods[j]) %>% select (Error_1))[[1]]
             errors = c(errors, method_error)
             
-            method_indep_errors = (component_evaluation %>% filter (Method == methods[j]) %>% select (Independent_errors_1))[[1]]
+            method_indep_errors = (component_evaluation %>% filter (Method == methods[j]) %>% select (Independent_errors))[[1]]
             indep_errors = c(indep_errors, method_indep_errors)
         }
         improvements_result = rbind(improvements_result, improvements)
