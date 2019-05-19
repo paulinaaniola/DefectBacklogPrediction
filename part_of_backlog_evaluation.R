@@ -37,15 +37,49 @@ evaluate_divided_backlog_errors <- function(product) {
     
     arima_improvement = round((1 - (arima_mean_error/naive_mean_error))*100, 2)
     ets_improvement =  round((1 - (ets_mean_error/naive_mean_error))*100, 2)
-    ericsson_improvement = round((1 - (ericsson_mean_error/naive_mean_error))*100, 2)
+    ericsson_improvement = round((1 - (ericsson_mean_error/naive_mean_error))*100, 2)   
+    
+    #cliff delta and hedges'g coefficients
+    arima_cd = toString(cliff.delta(naive_errors, arima_errors)$magnitude)
+    arima_hg = toString(cohen.d(naive_errors, arima_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
+
+    ets_cd = toString(cliff.delta(naive_errors, ets_errors)$magnitude)
+    ets_hg = toString(cohen.d(naive_errors, ets_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
+    
+    ericsson_cd = toString(cliff.delta(naive_errors, ericsson_errors)$magnitude)
+    ericsson_hg = toString(cohen.d(naive_errors, ericsson_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
+    
+    #wilcoxon test
+    #In order to make wilcoxon test length of naive errors adjusted to the length of method errors
+    arima_errors <- arima_errors[!is.na(arima_errors)]  
+    ets_errors <- ets_errors[!is.na(ets_errors)]   
+    ericsson_errors <- ericsson_errors[!is.na(ericsson_errors)]   
+
+    arima_n_error <- tail(naive_errors, n=length(arima_errors))
+    ets_n_error <- tail(naive_errors, n=length(ets_errors))
+    ericsson_n_error <- tail(naive_errors, n=length(ericsson_errors))
+
+    arima_p = wilcox.test(arima_n_error, arima_errors, paired=TRUE)$p.value
+    arima_wilcoxon_test = arima_p<0.05
+    
+    ets_p = wilcox.test(ets_n_error, ets_errors, paired=TRUE)$p.value
+    ets_wilcoxon_test = ets_p<0.05
+    
+    ericsson_p = wilcox.test(ericsson_n_error, ericsson_errors, paired=TRUE)$p.value
+    ericsson_wilcoxon_test = ericsson_p<0.05
     
     mean_errors = c(arima_mean_error, ets_mean_error, ericsson_mean_error, naive_mean_error)
-    improvements = c(arima_improvement, ets_improvement, ericsson_improvement, 0)
-    result <- rbind(mean_errors, improvements)
+    improvements = c(arima_improvement, ets_improvement, ericsson_improvement, 0) 
+    hedges_g = c(arima_hg, ets_hg, ericsson_hg, NA)
+    cliff_delta = c(arima_cd, ets_cd, ericsson_cd, NA)
+    wilcoxon_test = c(arima_wilcoxon_test, ets_wilcoxon_test, ericsson_wilcoxon_test, FALSE)
     
-    rownames(result)[1] = "mean_errors"
-    rownames(result)[2] = "improvements"
-    colnames(result)=  c("arima_th.all", "ets.all", "ericsson", "naive")
+    result <- data.frame(Method = c("arima_th:all", "ets_th:all", "ericsson", "naive"),
+                             Error_1 = mean_errors,
+                             Impr_1 = improvements,
+                             Cliff_delta = cliff_delta,
+                             Hedges_g = hedges_g,
+                             Wilcoxon_test = wilcoxon_test)                            
 
     write.table(result, file = paste("data/", product[1], "/", product[2], "/Predictions/Divided_backlog_predictions/errors_evaluation.csv", sep=""), sep=",")  
 }
