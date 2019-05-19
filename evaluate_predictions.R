@@ -18,14 +18,14 @@ evaluate_single_product_predictions <- function (product) {
     number_of_predicted_weeks = as.integer(number_of_predicted_weeks)
     naive_predictions = read.csv(file=paste(forecasts_path, "/naive.csv", sep=""), header=TRUE, sep=",")
     naive_error_1 = naive_predictions[, "Error_1"]
-
     
     methods <- c()
+    mean_ae <- c()
     improvement <- c()
     cliff_delta <- c()
     hedges_g <- c()
-    mean_ae <- c()
     errors_autocorrelation <- c()
+    wilcoxon_test <- c()
 
     for(i in 1:length(files)) {
         x = files[i]
@@ -39,17 +39,23 @@ evaluate_single_product_predictions <- function (product) {
         ae = mean(errors, na.rm=TRUE)              
         ljung_box_test = Box.test(errors, lag=30, type="Ljung-Box")             
         ae = round(ae, 2)
-        acorr = ljung_box_test$p.value>0.05
-
         mean_ae = c(mean_ae, ae)
+
+        # test for autocorrelation in errors
+        acorr = ljung_box_test$p.value>0.05
         errors_autocorrelation = c(errors_autocorrelation, acorr)      
         
         # cliff's delta and hedges'g coefficients for all methods and naive method
-        method_error_1 = predictions[, "Error_1"]
-        method_cd = toString(cliff.delta(naive_error_1, method_error_1)$magnitude)
-        method_hg = toString(cohen.d(naive_error_1, method_error_1, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
+        method_cd = toString(cliff.delta(naive_error_1, errors)$magnitude)
+        method_hg = toString(cohen.d(naive_error_1, errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
         cliff_delta = c(cliff_delta, method_cd)
         hedges_g = c(hedges_g, method_hg)
+        
+        #wilcoxon test
+        #In order to make wilcoxon test length of naive errors adjusted to the length of method errors
+        n_error <- tail(naive_error_1, n=length(errors))
+        p = wilcox.test(n_error, errors, paired=TRUE)$p.value
+        wilcoxon_test = c(wilcoxon_test, p<0.05)
     }
     
     errors <- data.frame(Method = methods)
@@ -71,6 +77,7 @@ evaluate_single_product_predictions <- function (product) {
     result[, "Impr_1"] = improvement
     result[, "Cliff_delta"] = cliff_delta
     result[, "Hedges_g"] = hedges_g
+    result[, "Wilcoxon_test"] = wilcoxon_test
     result[, "Independent_errors"] = acorr      
         
     result_file_path = paste("data/", product[1], "/", product[2], "/predictions_evaluation.csv", sep="")
