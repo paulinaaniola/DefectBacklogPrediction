@@ -1,0 +1,5 @@
+"Method","Error_1","Impr_1","Cliff_delta","Hedges_g","Wilcoxon_test"
+"1","arima_th:all",7.92,19.59,"negligible","negligible",TRUE
+"2","ets_th:all",7.46,24.26,"small","small",TRUE
+"3","ericsson",7.78,21.02,"negligible","negligible",TRUE
+"4","naive",9.85,0,NA,NA,FALSE

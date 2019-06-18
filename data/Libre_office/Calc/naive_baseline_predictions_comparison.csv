@@ -1,0 +1,17 @@
+"Method","Error_1","Impr_1","Cliff_delta","Hedges_g","Wilcoxon_test","Independent_errors"
+"1","arima_th:2",32.06,-81.95,"large","medium",TRUE,TRUE
+"2","arima_th:4",20.33,-15.38,"negligible","negligible",FALSE,TRUE
+"3","arima_th:8",12.87,26.96,"medium","small",TRUE,TRUE
+"4","arima_th:16",14.39,18.33,"small","small",TRUE,TRUE
+"5","arima_th:32",14.18,19.52,"small","small",TRUE,TRUE
+"6","arima_th:64",13.87,21.28,"small","small",TRUE,TRUE
+"7","arima_th:all",11.38,35.41,"medium","small",TRUE,TRUE
+"8","ericsson",12.69,27.98,"medium","small",TRUE,TRUE
+"9","ets_th:2",16.01,9.14,"small","negligible",FALSE,TRUE
+"10","ets_th:4",14.62,17.03,"small","small",TRUE,TRUE
+"11","ets_th:8",16.42,6.81,"negligible","negligible",TRUE,TRUE
+"12","ets_th:16",15.3,13.17,"small","negligible",TRUE,TRUE
+"13","ets_th:32",14.9,15.44,"small","negligible",TRUE,TRUE
+"14","ets_th:64",13.52,23.27,"small","small",TRUE,TRUE
+"15","ets_th:all",12.01,31.84,"medium","small",TRUE,TRUE
+"16","naive",17.62,0,"negligible","negligible",NA,TRUE

@@ -1,11 +1,11 @@
-evaluate_predictions <- function (products) {
+evaluate_predictions <- function (products, comparison_baseline_method) {
     for(i in 1:nrow(products)){
-        evaluate_single_product_predictions(products[i,])
+        evaluate_single_product_predictions(products[i,], comparison_baseline_method)
     }
-    calculate_mean_assesment_measures(products)  
+    #calculate_mean_assesment_measures(products)  
 }    
 
-evaluate_single_product_predictions <- function (product) {
+evaluate_single_product_predictions <- function (product, comparison_baseline_method) {
     
     forecasts_path = paste("data/", product[1], "/", product[2], "/Predictions", sep="")
     files <- list.files(path=forecasts_path, pattern="*.csv", full.names=TRUE, recursive=FALSE)
@@ -16,8 +16,8 @@ evaluate_single_product_predictions <- function (product) {
     last_error = tail(col_names, n=1)
     number_of_predicted_weeks = (strsplit(last_error, "_", fixed=TRUE))[[1]][2]
     number_of_predicted_weeks = as.integer(number_of_predicted_weeks)
-    naive_predictions = read.csv(file=paste(forecasts_path, "/naive.csv", sep=""), header=TRUE, sep=",")
-    naive_error_1 = naive_predictions[, "Error_1"]
+    baseline_predictions = read.csv(file=paste(forecasts_path, "/", comparison_baseline_method ,".csv", sep=""), header=TRUE, sep=",")
+    baseline_error_1 = baseline_predictions[, "Error_1"]
     
     methods <- c()
     mean_ae <- c()
@@ -46,14 +46,23 @@ evaluate_single_product_predictions <- function (product) {
         errors_autocorrelation = c(errors_autocorrelation, acorr)      
         
         # cliff's delta and hedges'g coefficients for all methods and naive method
-        method_cd = toString(cliff.delta(naive_error_1, errors)$magnitude)
-        method_hg = toString(cohen.d(naive_error_1, errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
+        cd = abs(cliff.delta(baseline_error_1, errors)[[1]])
+        if(cd<0.112){
+            method_cd = "negligible"
+        } else if(0.112<=cd & cd <0.276) {
+            method_cd = "small"
+        } else if(0.112<= cd & cd <0.428){
+            method_cd = "medium"
+        } else if (cd>=0.428){
+            method_cd = "large"
+        }
+        method_hg = toString(cohen.d(baseline_error_1, errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
         cliff_delta = c(cliff_delta, method_cd)
         hedges_g = c(hedges_g, method_hg)
         
         #wilcoxon test
         #In order to make wilcoxon test length of naive errors adjusted to the length of method errors
-        n_error <- tail(naive_error_1, n=length(errors))
+        n_error <- tail(baseline_error_1, n=length(errors))
         p = wilcox.test(n_error, errors, paired=TRUE)$p.value
         wilcoxon_test = c(wilcoxon_test, p<0.05)
     }
@@ -80,7 +89,7 @@ evaluate_single_product_predictions <- function (product) {
     result[, "Wilcoxon_test"] = wilcoxon_test
     result[, "Independent_errors"] = acorr      
         
-    result_file_path = paste("data/", product[1], "/", product[2], "/predictions_evaluation.csv", sep="")
+    result_file_path = paste("data/", product[1], "/", product[2], "/", comparison_baseline_method, "_baseline_predictions_comparison.csv", sep="")
     write.table(result, file = result_file_path, sep=",")
 } 
 

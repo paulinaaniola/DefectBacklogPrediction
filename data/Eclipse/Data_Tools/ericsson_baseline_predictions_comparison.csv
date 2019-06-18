@@ -1,0 +1,17 @@
+"Method","Error_1","Impr_1","Cliff_delta","Hedges_g","Wilcoxon_test","Independent_errors"
+"1","arima_th:2",10.84,-23.89,"negligible","negligible",TRUE,TRUE
+"2","arima_th:4",11.67,-33.37,"small","negligible",TRUE,TRUE
+"3","arima_th:8",9.94,-13.6,"negligible","negligible",TRUE,TRUE
+"4","arima_th:16",8.91,-1.83,"negligible","negligible",FALSE,TRUE
+"5","arima_th:32",8.89,-1.6,"negligible","negligible",FALSE,TRUE
+"6","arima_th:64",8.49,2.97,"negligible","negligible",FALSE,TRUE
+"7","arima_th:all",8.12,7.2,"negligible","negligible",FALSE,TRUE
+"8","ericsson",8.52,2.63,"negligible","negligible",NA,TRUE
+"9","ets_th:2",9.63,-10.06,"negligible","negligible",FALSE,TRUE
+"10","ets_th:4",9.59,-9.6,"negligible","negligible",TRUE,TRUE
+"11","ets_th:8",9.32,-6.51,"negligible","negligible",FALSE,TRUE
+"12","ets_th:16",8.78,-0.34,"negligible","negligible",FALSE,TRUE
+"13","ets_th:32",8.68,0.8,"negligible","negligible",FALSE,TRUE
+"14","ets_th:64",8.47,3.2,"negligible","negligible",FALSE,TRUE
+"15","ets_th:all",8.37,4.34,"negligible","negligible",FALSE,TRUE
+"16","naive",8.75,0,"negligible","negligible",FALSE,TRUE

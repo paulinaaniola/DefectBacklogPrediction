@@ -1,4 +1,4 @@
-evaluate_divided_backlog_errors <- function(product) {
+evaluate_divided_backlog_errors <- function(product, comparison_baseline_method) {
     forecasts_path = paste("data/", product[1], "/", product[2], "/Predictions/Divided_backlog_predictions", sep="")
 
     arima_files <- list.files(path=forecasts_path, pattern="arima*", full.names=TRUE, recursive=FALSE)
@@ -29,7 +29,23 @@ evaluate_divided_backlog_errors <- function(product) {
         predictions = read.csv(file=naive_files[i], header=TRUE, sep=",")
         naive_errors = c(naive_errors, predictions$error_1)
     }
+    
+    arima_errors <- arima_errors[!is.na(arima_errors)]  
+    ets_errors <- ets_errors[!is.na(ets_errors)]   
+    ericsson_errors <- ericsson_errors[!is.na(ericsson_errors)]   
 
+    comparison_baseline_method_errors = c()
+    
+     if(comparison_baseline_method == "arima"){
+         comparison_baseline_method_errors = arima_errors
+     } else if(comparison_baseline_method == "ets"){
+         comparison_baseline_method_errors = ets_errors  
+     } else if (comparison_baseline_method == "naive"){
+         comparison_baseline_method_errors = naive_errors  
+     } else if (comparison_baseline_method == "ericsson"){
+         comparison_baseline_method_errors = ericsson_errors  
+     }
+    
     arima_mean_error = round(mean(arima_errors, na.rm=TRUE), 2)
     ets_mean_error = round(mean(ets_errors, na.rm=TRUE), 2)
     ericsson_mean_error = round(mean(ericsson_errors, na.rm=TRUE), 2)
@@ -40,31 +56,45 @@ evaluate_divided_backlog_errors <- function(product) {
     ericsson_improvement = round((1 - (ericsson_mean_error/naive_mean_error))*100, 2)   
     
     #cliff delta and hedges'g coefficients
-    arima_cd = toString(cliff.delta(naive_errors, arima_errors)$magnitude)
-    arima_hg = toString(cohen.d(naive_errors, arima_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
+    arima_cd = toString(cliff.delta(comparison_baseline_method_errors, arima_errors)$magnitude)
+    arima_hg = toString(cohen.d(comparison_baseline_method_errors, arima_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
 
-    ets_cd = toString(cliff.delta(naive_errors, ets_errors)$magnitude)
-    ets_hg = toString(cohen.d(naive_errors, ets_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
+    ets_cd = toString(cliff.delta(comparison_baseline_method_errors, ets_errors)$magnitude)
+    ets_hg = toString(cohen.d(comparison_baseline_method_errors, ets_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
     
-    ericsson_cd = toString(cliff.delta(naive_errors, ericsson_errors)$magnitude)
-    ericsson_hg = toString(cohen.d(naive_errors, ericsson_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
+    ericsson_cd = toString(cliff.delta(comparison_baseline_method_errors, ericsson_errors)$magnitude)
+    ericsson_hg = toString(cohen.d(comparison_baseline_method_errors, ericsson_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
     
     #wilcoxon test
     #In order to make wilcoxon test length of naive errors adjusted to the length of method errors
-    arima_errors <- arima_errors[!is.na(arima_errors)]  
-    ets_errors <- ets_errors[!is.na(ets_errors)]   
-    ericsson_errors <- ericsson_errors[!is.na(ericsson_errors)]   
+    arima_n_error = comparison_baseline_method_errors
+    ets_n_error = comparison_baseline_method_errors
+    ericsson_n_error = comparison_baseline_method_errors
 
-    arima_n_error <- tail(naive_errors, n=length(arima_errors))
-    ets_n_error <- tail(naive_errors, n=length(ets_errors))
-    ericsson_n_error <- tail(naive_errors, n=length(ericsson_errors))
-
+    if(length(comparison_baseline_method_errors) > length(arima_errors)){
+       arima_n_error <- tail(comparison_baseline_method_errors, n=length(arima_errors))
+    } else {
+       arima_errors <- tail(arima_errors, n=length(comparison_baseline_method_errors))
+    }
     arima_p = wilcox.test(arima_n_error, arima_errors, paired=TRUE)$p.value
     arima_wilcoxon_test = arima_p<0.05
+    
+    if(length(comparison_baseline_method_errors) > length(ets_errors)){
+       ets_n_error <- tail(comparison_baseline_method_errors, n=length(ets_errors))
+    } else {
+       ets_errors <- tail(ets_errors, n=length(comparison_baseline_method_errors))
+    }    
+    ets_n_error <- tail(comparison_baseline_method_errors, n=length(ets_errors))
+    ericsson_n_error <- tail(comparison_baseline_method_errors, n=length(ericsson_errors))
     
     ets_p = wilcox.test(ets_n_error, ets_errors, paired=TRUE)$p.value
     ets_wilcoxon_test = ets_p<0.05
     
+    if(length(comparison_baseline_method_errors) > length(ericsson_errors)){
+       ericsson_n_error <- tail(comparison_baseline_method_errors, n=length(ericsson_errors))
+    } else {
+       ericsson_errors <- tail(ericsson_errors, n=length(comparison_baseline_method_errors))
+    }  
     ericsson_p = wilcox.test(ericsson_n_error, ericsson_errors, paired=TRUE)$p.value
     ericsson_wilcoxon_test = ericsson_p<0.05
     
@@ -81,5 +111,5 @@ evaluate_divided_backlog_errors <- function(product) {
                              Hedges_g = hedges_g,
                              Wilcoxon_test = wilcoxon_test)                            
 
-    write.table(result, file = paste("data/", product[1], "/", product[2], "/Predictions/Divided_backlog_predictions/errors_evaluation.csv", sep=""), sep=",")  
+    write.table(result, file = paste("data/", product[1], "/", product[2], "/Predictions/Divided_backlog_predictions/", comparison_baseline_method, "_baseline_predictions_comparison.csv", sep=""), sep=",")  
 }
