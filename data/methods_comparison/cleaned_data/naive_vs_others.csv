@@ -5,10 +5,10 @@
 "4","eclipse_birt",0,0,0
 "5","eclipse_jdt",0,0,0
 "6","eclipse_pde",0,0,0
-"7","mozilla_calendar",0,1,0
-"8","mozilla_firefox",0,0,1
+"7","mozilla_calendar",1,1,1
+"8","mozilla_firefox",1,1,1
 "9","mozilla_core",1,1,1
-"10","mozilla_thunderbird",0,0,0
+"10","mozilla_thunderbird",1,0,1
 "11","kernel_IO_Storage",0,0,0
 "12","kernel_file_system",0,0,0
 "13","open_office_writer",1,1,1

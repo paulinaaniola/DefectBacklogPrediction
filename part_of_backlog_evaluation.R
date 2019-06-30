@@ -56,13 +56,16 @@ evaluate_divided_backlog_errors <- function(product, comparison_baseline_method)
     ericsson_improvement = round((1 - (ericsson_mean_error/naive_mean_error))*100, 2)   
     
     #cliff delta and hedges'g coefficients
-    arima_cd = toString(cliff.delta(comparison_baseline_method_errors, arima_errors)$magnitude)
+    arima_cd = cliff.delta(comparison_baseline_method_errors, arima_errors)[[1]]
+    arima_nnt = arima_cd^-1
     arima_hg = toString(cohen.d(comparison_baseline_method_errors, arima_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
 
-    ets_cd = toString(cliff.delta(comparison_baseline_method_errors, ets_errors)$magnitude)
+    ets_cd = cliff.delta(comparison_baseline_method_errors, ets_errors)[[1]]
+    ets_nnt = ets_cd^-1
     ets_hg = toString(cohen.d(comparison_baseline_method_errors, ets_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
     
-    ericsson_cd = toString(cliff.delta(comparison_baseline_method_errors, ericsson_errors)$magnitude)
+    ericsson_cd = cliff.delta(comparison_baseline_method_errors, ericsson_errors)[[1]]
+    ericsson_nnt = ericsson_cd^-1
     ericsson_hg = toString(cohen.d(comparison_baseline_method_errors, ericsson_errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
     
     #wilcoxon test
@@ -101,7 +104,8 @@ evaluate_divided_backlog_errors <- function(product, comparison_baseline_method)
     mean_errors = c(arima_mean_error, ets_mean_error, ericsson_mean_error, naive_mean_error)
     improvements = c(arima_improvement, ets_improvement, ericsson_improvement, 0) 
     hedges_g = c(arima_hg, ets_hg, ericsson_hg, NA)
-    cliff_delta = c(arima_cd, ets_cd, ericsson_cd, NA)
+    cliff_delta = c(get_cd_magnitude(arima_cd), get_cd_magnitude(ets_cd), get_cd_magnitude(ericsson_cd), NA)
+    nnt = c(arima_nnt, ets_nnt, ericsson_nnt, NA)
     wilcoxon_test = c(arima_wilcoxon_test, ets_wilcoxon_test, ericsson_wilcoxon_test, FALSE)
     
     result <- data.frame(Method = c("arima_th:all", "ets_th:all", "ericsson", "naive"),
@@ -109,7 +113,22 @@ evaluate_divided_backlog_errors <- function(product, comparison_baseline_method)
                              Impr_1 = improvements,
                              Cliff_delta = cliff_delta,
                              Hedges_g = hedges_g,
+                             NNT = nnt,
                              Wilcoxon_test = wilcoxon_test)                            
 
     write.table(result, file = paste("data/", product[1], "/", product[2], "/Predictions/Divided_backlog_predictions/", comparison_baseline_method, "_baseline_predictions_comparison.csv", sep=""), sep=",")  
+}
+
+get_cd_magnitude <- function(cd){
+    magnitude = ""
+    if(cd<0.112){
+       magnitude = "negligible"
+    } else if(0.112<=cd & cd <0.276) {
+       magnitude = "small"
+    } else if(0.112<= cd & cd <0.428){
+       magnitude = "medium"
+    } else if (cd>=0.428){
+       magnitude = "large"
+    }
+    return(magnitude)
 }

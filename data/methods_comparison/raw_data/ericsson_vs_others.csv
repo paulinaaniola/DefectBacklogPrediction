@@ -11,8 +11,8 @@
 "10","mozilla_thunderbird",0,0,0
 "11","kernel_IO_Storage",0,0,0
 "12","kernel_file_system",0,0,0
-"13","open_office_writer",1,1,0
-"14","open_office_calc",1,0,0
+"13","open_office_writer",0,0,0
+"14","open_office_calc",0,0,0
 "15","open_office_draw",0,0,0
 "16","apache_ant",0,0,0
 "17","apache_apache2",0,0,0

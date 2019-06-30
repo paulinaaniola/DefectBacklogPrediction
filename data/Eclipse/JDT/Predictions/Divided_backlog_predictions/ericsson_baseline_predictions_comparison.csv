@@ -1,5 +1,5 @@
-"Method","Error_1","Impr_1","Cliff_delta","Hedges_g","Wilcoxon_test"
-"1","arima_th:all",21.07,6.85,"negligible","negligible",TRUE
-"2","ets_th:all",20.36,9.99,"negligible","negligible",TRUE
-"3","ericsson",25.19,-11.36,"negligible","negligible",NA
-"4","naive",22.62,0,NA,NA,FALSE
+"Method","Error_1","Impr_1","Cliff_delta","Hedges_g","NNT","Wilcoxon_test"
+"1","arima_th:all",21.07,6.85,"negligible","negligible",11.1180870959124,TRUE
+"2","ets_th:all",20.36,9.99,"small","negligible",8.33633814102564,TRUE
+"3","ericsson",25.19,-11.36,"negligible","negligible",167998611348723168,NA
+"4","naive",22.62,0,NA,NA,NA,FALSE

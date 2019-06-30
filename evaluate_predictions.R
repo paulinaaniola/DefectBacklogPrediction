@@ -26,6 +26,7 @@ evaluate_single_product_predictions <- function (product, comparison_baseline_me
     hedges_g <- c()
     errors_autocorrelation <- c()
     wilcoxon_test <- c()
+    nnt <- c()
 
     for(i in 1:length(files)) {
         x = files[i]
@@ -46,7 +47,7 @@ evaluate_single_product_predictions <- function (product, comparison_baseline_me
         errors_autocorrelation = c(errors_autocorrelation, acorr)      
         
         # cliff's delta and hedges'g coefficients for all methods and naive method
-        cd = abs(cliff.delta(baseline_error_1, errors)[[1]])
+        cd = cliff.delta(baseline_error_1, errors)[[1]]
         if(cd<0.112){
             method_cd = "negligible"
         } else if(0.112<=cd & cd <0.276) {
@@ -56,8 +57,9 @@ evaluate_single_product_predictions <- function (product, comparison_baseline_me
         } else if (cd>=0.428){
             method_cd = "large"
         }
-        method_hg = toString(cohen.d(baseline_error_1, errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
         cliff_delta = c(cliff_delta, method_cd)
+        nnt = c(nnt, round(cd^-1, 3))
+        method_hg = toString(cohen.d(baseline_error_1, errors, hedges.correction=TRUE, na.rm=TRUE)$magnitude)
         hedges_g = c(hedges_g, method_hg)
         
         #wilcoxon test
@@ -86,6 +88,7 @@ evaluate_single_product_predictions <- function (product, comparison_baseline_me
     result[, "Impr_1"] = improvement
     result[, "Cliff_delta"] = cliff_delta
     result[, "Hedges_g"] = hedges_g
+    result[, "NNT"] = nnt
     result[, "Wilcoxon_test"] = wilcoxon_test
     result[, "Independent_errors"] = acorr      
         
