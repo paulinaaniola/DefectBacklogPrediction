@@ -1,4 +1,5 @@
 # DefectBacklogPrediction
+## Master's thesis project conducted in Software Enginerring faculty
 
 #### Data
 
